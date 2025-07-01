@@ -7,6 +7,7 @@ from typing_extensions import TypedDict
 from langgraph.graph import StateGraph, END
 from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import create_react_agent
+from langgraph.checkpoint.base import BaseCheckpointSaver
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 
 from .prompts import (INPUT_CLASSIFYING_PROMPT,
@@ -16,29 +17,37 @@ from .prompts import (INPUT_CLASSIFYING_PROMPT,
                       CLASSIFYING_DECISIONS_DESCRIPTION,
                       BASE_SYSTEM_PROMPT)
 from .tools import rag_tool, search_tool
-# TODO: ридми, докерфайл, докстринги и типы, тесты, пример конфига, текст для start
+from src.bot.tg_bot import TgBotClient
+# TODO: ридми, докерфайл, тесты
 
 HISTORY_WINDOW = 10
 
 
 class InputClassifierDecision(BaseModel):
-    """Decision on what action to take"""
+    """Решение, какое действие выполнить следующим"""
+
     action: Literal['free_answer', 'knowledge_base', 'web_search', 'acquire_info'] = Field(description=CLASSIFYING_DECISIONS_DESCRIPTION)
 
 
 class AgentState(TypedDict):
+    """State агента"""
+
     user_id: int
     message_from_user: str
     decision: Literal['free_answer', 'knowledge_base', 'web_search', 'acquire_info']
     chat_history: List[Union[HumanMessage, AIMessage, SystemMessage]]
 
 
-def build_graph(bot_client: Any, checkpointer: Any, llm_config: Dict) -> StateGraph:
+def build_graph(bot_client: TgBotClient, checkpointer: BaseCheckpointSaver, llm_config: Dict) -> StateGraph:
+    """Функция сборки графа Langgraph"""
+
     llm = ChatOpenAI(**llm_config)
 
     graph = StateGraph(AgentState)
 
-    def preprocess(state: AgentState):
+    def preprocess(state: AgentState) -> AgentState:
+        """Node предобработки входящего State"""
+
         if BASE_SYSTEM_PROMPT:
             base = [SystemMessage(content=BASE_SYSTEM_PROMPT)]
         else:
@@ -56,19 +65,25 @@ def build_graph(bot_client: Any, checkpointer: Any, llm_config: Dict) -> StateGr
 
         return state
 
-    def classify_input(state: AgentState) -> str:
+    def classify_input(state: AgentState) -> AgentState:
+        """Node принятия решения о дальнейшем действии"""
+
         classifying_llm = llm.with_structured_output(InputClassifierDecision)
 
         state["decision"] = classifying_llm.invoke(state["chat_history"] + [SystemMessage(content=INPUT_CLASSIFYING_PROMPT)]).action
 
         return state
 
-    def free_answer(state: AgentState) -> str:
+    def free_answer(state: AgentState) -> AgentState:
+        """Node свободного ответа с помощью LLM"""
+
         state["chat_history"].append(llm.invoke(state["chat_history"]))
 
         return state
 
-    def knowledge_base(state: AgentState) -> str:
+    def knowledge_base(state: AgentState) -> AgentState:
+        """Node обращения к RAG агенту по базе знаний"""
+
         rag_agent = create_react_agent(
             model=llm,
             tools=[rag_tool],
@@ -81,7 +96,9 @@ def build_graph(bot_client: Any, checkpointer: Any, llm_config: Dict) -> StateGr
 
         return state
 
-    def acquire_info(state: AgentState) -> str:
+    def acquire_info(state: AgentState) -> AgentState:
+        """Node HITL"""
+
         state["chat_history"].append(llm.invoke(state["chat_history"] + [SystemMessage(content=GET_MORE_INFO_PROMPT)]))
 
         state["chat_history"].append(HumanMessage(content=bot_client.acquire_info_from_user(
@@ -91,7 +108,9 @@ def build_graph(bot_client: Any, checkpointer: Any, llm_config: Dict) -> StateGr
 
         return state
 
-    def web_search(state: AgentState) -> str:
+    def web_search(state: AgentState) -> AgentState:
+        """Node обращения к Web Search агенту"""
+
         search_agent = create_react_agent(
             model=llm,
             tools=[search_tool],
@@ -105,7 +124,9 @@ def build_graph(bot_client: Any, checkpointer: Any, llm_config: Dict) -> StateGr
 
         return state
 
-    def send_to_user(state: AgentState) -> str:
+    def send_to_user(state: AgentState) -> AgentState:
+        """Node отправки результата обратно к пользователю через кастомный клиент"""
+
         bot_client.send_text_to_user(
             user=state["user_id"],
             text=state["chat_history"][-1].content

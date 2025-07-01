@@ -8,6 +8,8 @@ import os
 
 
 def main():
+    """Точка входа приложение"""
+
     config = load_config('../config.yaml')
 
     bot = telebot.TeleBot(config['app']['tg_bot_token'])

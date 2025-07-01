@@ -1,5 +1,6 @@
 import os.path
 import shutil
+from typing import List
 from docx import Document
 from config import load_config
 from langchain_core.documents.base import Document as LangDoc
@@ -7,7 +8,9 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_chroma import Chroma
 
 
-def split_docx_by_bold(file_path):
+def split_docx_by_bold(file_path: str) -> List[Document]:
+    """Функция разделения Word документа на чанки по оглавлениям, выделенным жирным шрифтом"""
+
     doc = Document(file_path)
     sections = []
     current_section = {'title': None, 'content': []}
@@ -48,7 +51,9 @@ def split_docx_by_bold(file_path):
     return docs
 
 
-def create_vectorstore(docs, path=None):
+def create_vectorstore(docs: List[Document], path: str = None) -> None:
+    """Функция создания и сохранения векторной базы знаний"""
+
     if path:
         if os.path.exists(path):
             shutil.rmtree(path)
