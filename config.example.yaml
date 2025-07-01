@@ -1,0 +1,15 @@
+llm:  # Настройки LLM
+  model: "gpt-4o-mini"
+  api_key: "sk-..."
+  base_url: "https://api.proxyapi.ru/openai/v1"
+  temperature: 0.7
+  max_tokens: 500
+langsmith:  # Настройки для логирования в langsmith
+  LANGSMITH_TRACING: "true"
+  LANGSMITH_ENDPOINT: "https://api.smith.langchain.com"
+  LANGSMITH_API_KEY: "lsv2_..."
+  LANGSMITH_PROJECT: "nutrition_consultant"
+app:  # Настройки приложения
+  sqlite_path: "../data/memory_store.db"  # Путь сорхранения БД памяти
+  tg_bot_token: "..."
+  tavily_api_key: "tvly-dev-..."

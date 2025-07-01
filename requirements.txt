@@ -1,0 +1,16 @@
+langchain-community
+langchain
+langgraph
+langchain-openai
+langgraph-checkpoint-sqlite
+langchain-chroma
+langchain-tavily
+pyTelegramBotAPI
+python-docx
+telebot
+pydantic
+typing_extensions
+urllib3
+langchain-core
+PyYAML
+telegramify-markdown
