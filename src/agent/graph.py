@@ -18,7 +18,7 @@ from .prompts import (INPUT_CLASSIFYING_PROMPT,
                       BASE_SYSTEM_PROMPT)
 from .tools import rag_tool, search_tool
 from src.bot.tg_bot import TgBotClient
-# TODO: ридми, докерфайл, тесты
+
 
 HISTORY_WINDOW = 10
 

@@ -5,7 +5,8 @@ from langchain_tavily import TavilySearch
 from src.utils.config import load_config
 import os
 
-config = load_config('../config.yaml')
+config_path = os.path.join(os.path.dirname(__file__), "..", "..", "config.yaml")
+config = load_config(os.path.abspath(config_path))
 
 embeddings = OpenAIEmbeddings(
     openai_api_key=config['llm']['api_key'],
