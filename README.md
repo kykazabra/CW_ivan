@@ -1,4 +1,5 @@
 # Проект: Бот-нутрициолог
+https://t.me/nutrition_consultant_pro_bot
 
 ## Описание
 
